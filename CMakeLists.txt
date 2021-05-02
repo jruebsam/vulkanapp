@@ -3,6 +3,8 @@ project(VulkanDemo)
 
 set(BIN_NAME "vkdemo")
 
+set(NDEBUG)
+
 file(GLOB SOURCES "src/*.cpp")
 include_directories("include")
 
@@ -10,7 +12,7 @@ include_directories("include")
 find_package(PkgConfig REQUIRED)
 pkg_search_module(GLFW REQUIRED glfw3)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -d -Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Wall")
 set( CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall")
 set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

@@ -11,35 +11,39 @@
 class VulkanRenderer
 {
 public:
-	VulkanRenderer();
+  VulkanRenderer();
 
-	int init(GLFWwindow * newWindow);
-	void cleanup();
+  int init(GLFWwindow * newWindow);
+  void cleanup();
 
-	~VulkanRenderer();
+  ~VulkanRenderer();
 
 private:
-	GLFWwindow * window;
+  GLFWwindow * window;
 
-	VkInstance instance;
-	struct {
-		VkPhysicalDevice physicalDevice;
-		VkDevice logicalDevice;
-	} mainDevice;
+  VkInstance instance;
+  struct {
+    VkPhysicalDevice physicalDevice;
+    VkDevice logicalDevice;
+  } mainDevice;
 
-	VkQueue graphicsQueue;
+  VkQueue graphicsQueue;
+  VkDebugUtilsMessengerEXT debugMessenger;
 
-	// create functions
-	void createInstance();
-	void createLogicalDevice();
+  // create functions
+  void createInstance();
+  void createLogicalDevice();
+  void setupDebugMessenger();
 
-	// get functions
-	void getPhysicalDevice();
-	QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
+  // get functions
+  void getPhysicalDevice();
+  QueueFamilyIndices getQueueFamilies(VkPhysicalDevice device);
 
-	// helper functions
-	void appendGLFWExtensions(std::vector<const char*> *extensionList);
-	bool checkInstanceExtensionSupport(std::vector<const char*> *checkExtensions);
-	bool checkDeviceSuitable(VkPhysicalDevice device);
+  // helper functions
+  void appendGLFWExtensions(std::vector<const char*> *extensionList);
+  void appendValidationExtensions(std::vector<const char*> *extensionList);
+
+  bool checkInstanceExtensionSupport(std::vector<const char*> *checkExtensions);
+  bool checkDeviceSuitable(VkPhysicalDevice device);
 };
 
