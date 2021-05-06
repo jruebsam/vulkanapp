@@ -33,7 +33,10 @@ private:
   VkDebugUtilsMessengerEXT debugMessenger;
   VkSurfaceKHR surface;
   VkSwapchainKHR swapchain;
+
   std::vector<SwapChainImage> swapChainImages;
+  std::vector<VkFramebuffer> swapChainFrameBuffers;
+  std::vector<VkCommandBuffer> commandBuffers;
 
   //utility components
   VkFormat swapChainImageFormat;
@@ -44,6 +47,9 @@ private:
   VkPipeline graphicsPipeline;
   VkRenderPass renderPass;
 
+  //pools
+  VkCommandPool graphicsCommandPool;
+
 
   // create functions
   void createInstance();
@@ -53,6 +59,12 @@ private:
   void createSwapChain();
   void createRenderPass();
   void createGraphicsPipeline();
+  void createFrameBuffers();
+  void createCommandPool();
+  void createCommandBuffers();
+  
+  // record functions
+  void recordCommands();
 
 
   // get functions
