@@ -39,6 +39,11 @@ private:
   VkFormat swapChainImageFormat;
   VkExtent2D swapChainExtent;
 
+  //pipeline
+  VkPipelineLayout pipelineLayout;
+  VkPipeline graphicsPipeline;
+  VkRenderPass renderPass;
+
 
   // create functions
   void createInstance();
@@ -46,6 +51,8 @@ private:
   void createLogicalDevice();
   void createSurface();
   void createSwapChain();
+  void createRenderPass();
+  void createGraphicsPipeline();
 
 
   // get functions
@@ -62,6 +69,7 @@ private:
   bool checkDeviceSuitable(VkPhysicalDevice device);
 
   VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
+  VkShaderModule createShaderModule(const std::vector<char> &code);
 
   // choose functions
   VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats);
