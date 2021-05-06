@@ -4,6 +4,8 @@
 #include <vector>
 #include <fstream>
 
+const int MAX_FRAME_DRAWS = 2;
+
 const std::vector<const char*> deviceExtensions = {
   VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };

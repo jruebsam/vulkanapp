@@ -21,6 +21,7 @@ public:
 
 private:
   GLFWwindow * window;
+  int currentFrame{0};
 
   VkInstance instance;
   struct {
@@ -38,6 +39,7 @@ private:
   std::vector<SwapChainImage> swapChainImages;
   std::vector<VkFramebuffer> swapChainFrameBuffers;
   std::vector<VkCommandBuffer> commandBuffers;
+  std::vector<VkFence> drawFences;
 
   //utility components
   VkFormat swapChainImageFormat;
@@ -63,14 +65,14 @@ private:
   void createFrameBuffers();
   void createCommandPool();
   void createCommandBuffers();
-  
   void createSynchronization();
+
   // record functions
   void recordCommands();
 
   // sync objects
-  VkSemaphore imageAvailable;
-  VkSemaphore renderFinished;
+  std::vector<VkSemaphore> imageAvailable;
+  std::vector<VkSemaphore> renderFinished;
 
 
   // get functions
