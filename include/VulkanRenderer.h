@@ -14,6 +14,7 @@ public:
   VulkanRenderer();
 
   int init(GLFWwindow * newWindow);
+  void draw();
   void cleanup();
 
   ~VulkanRenderer();
@@ -63,8 +64,13 @@ private:
   void createCommandPool();
   void createCommandBuffers();
   
+  void createSynchronization();
   // record functions
   void recordCommands();
+
+  // sync objects
+  VkSemaphore imageAvailable;
+  VkSemaphore renderFinished;
 
 
   // get functions

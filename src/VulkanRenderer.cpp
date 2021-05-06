@@ -20,6 +20,11 @@ int VulkanRenderer::init(GLFWwindow * newWindow)
     createSwapChain();
     createRenderPass();
     createGraphicsPipeline();
+    createFrameBuffers();
+    createCommandPool();
+    createCommandBuffers();
+    recordCommands();
+    createSynchronization();
   }
   catch (const std::runtime_error &e) {
     printf("ERROR: %s\n", e.what());
@@ -27,6 +32,58 @@ int VulkanRenderer::init(GLFWwindow * newWindow)
   }
 
   return 0;
+}
+
+void VulkanRenderer::draw()
+{
+  uint32_t imageIndex;
+  vkAcquireNextImageKHR(mainDevice.logicalDevice, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailable, VK_NULL_HANDLE, &imageIndex);
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  submitInfo.waitSemaphoreCount = 1;
+  submitInfo.pWaitSemaphores = &imageAvailable;
+
+  VkPipelineStageFlags waitStages[] ={
+    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+  };
+  submitInfo.pWaitDstStageMask = waitStages;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+  submitInfo.signalSemaphoreCount = 1;
+  submitInfo.pSignalSemaphores = &renderFinished;
+
+  VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+  if(result != VK_SUCCESS)
+  {
+    throw std::runtime_error("Failed to submit draw operation to Graphics Queue");
+  }
+
+  VkPresentInfoKHR presentInfo{};
+  presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+  presentInfo.waitSemaphoreCount = 1;
+  presentInfo.pWaitSemaphores = &renderFinished;
+  presentInfo.swapchainCount = 1;
+  presentInfo.pSwapchains = &swapchain;
+  presentInfo.pImageIndices = &imageIndex;
+
+  result = vkQueuePresentKHR(graphicsQueue, &presentInfo);
+  if(result != VK_SUCCESS)
+  {
+    throw std::runtime_error("Failed to present Image!");
+  }
+}
+
+void VulkanRenderer::createSynchronization()
+{
+  VkSemaphoreCreateInfo semaphoreCreateInfo{};
+  semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+  if(vkCreateSemaphore(mainDevice.logicalDevice, &semaphoreCreateInfo, nullptr, &imageAvailable) ||
+     vkCreateSemaphore(mainDevice.logicalDevice, &semaphoreCreateInfo, nullptr, &renderFinished))
+  {
+    throw std::runtime_error("Failed to create Semaphore!");
+  }
 }
 
 void VulkanRenderer::setupDebugMessenger() {
@@ -43,6 +100,8 @@ void VulkanRenderer::setupDebugMessenger() {
 
 void VulkanRenderer::cleanup()
 {
+  vkDestroySemaphore(mainDevice.logicalDevice, renderFinished, nullptr);
+  vkDestroySemaphore(mainDevice.logicalDevice, imageAvailable, nullptr);
   vkDestroyCommandPool(mainDevice.logicalDevice, graphicsCommandPool, nullptr);
 
   for(auto framebuffer: swapChainFrameBuffers)
@@ -424,7 +483,12 @@ void VulkanRenderer::createSwapChain()
   swapChainImageFormat = surfaceFormat.format;
   swapChainExtent = extent;
 
-  uint32_t swapChainImageCount = vkGetSwapchainImagesKHR(mainDevice.logicalDevice, swapchain, &swapChainImageCount, nullptr);
+  uint32_t swapChainImageCount;
+  vkGetSwapchainImagesKHR(mainDevice.logicalDevice, swapchain, &swapChainImageCount, nullptr);
+
+  std::cout << "SWAPCHAIN IMAGES COUNT IS :" << swapChainImageCount << std::endl;
+
+
   std::vector<VkImage> images(swapChainImageCount);
   vkGetSwapchainImagesKHR(mainDevice.logicalDevice, swapchain, &swapChainImageCount, images.data());
 
