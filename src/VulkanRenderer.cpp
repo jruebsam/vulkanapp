@@ -28,14 +28,25 @@ int VulkanRenderer::init(GLFWwindow * newWindow)
 
     //create a mesh 
     std::vector<Vertex> meshVertices = {
-      {{ 0.4, -0.4, 0.0}, {1.0f, 0.0f, 0.0f}},
-      {{ 0.4,  0.4, 0.0}, {0.0f, 1.0f, 0.0f}},
-      {{-0.4,  0.4, 0.0}, {0.0f, 0.0f, 1.0f}},
-      {{ 0.4, -0.4, 0.0}, {1.0f, 0.0f, 0.0f}},
-      {{-0.4,  0.4, 0.0}, {0.0f, 0.0f, 1.0f}},
-      {{-0.4, -0.4, 0.0}, {1.0f, 1.0f, 0.0f}}
+      {{-0.1, -0.4, 0.0}, {1.0f, 0.0f, 0.0f}}, // 0
+      {{-0.1,  0.4, 0.0}, {0.0f, 1.0f, 0.0f}}, // 1
+      {{-0.9,  0.4, 0.0}, {0.0f, 0.0f, 1.0f}}, // 2
+      {{-0.9, -0.4, 0.0}, {1.0f, 1.0f, 0.0f}}  // 3
     };
-    firstMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, &meshVertices);
+
+    std::vector<Vertex> meshVertices2 = {
+      {{0.9, -0.3, 0.0}, {1.0f, 0.0f, 0.0f}}, // 0
+      {{0.9,  0.1, 0.0}, {0.0f, 1.0f, 0.0f}}, // 1
+      {{0.1,  0.3, 0.0}, {0.0f, 0.0f, 1.0f}}, // 2
+      {{0.1, -0.4, 0.0}, {1.0f, 1.0f, 0.0f}}  // 3
+    };
+
+    std::vector<uint32_t>  meshIndices{0, 1, 2, 0, 2, 3};
+
+    Mesh mesh1 = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, &meshVertices, &meshIndices);
+    Mesh mesh2 = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, &meshVertices2, &meshIndices);
+    meshList.push_back(mesh1);
+    meshList.push_back(mesh2);
 
     createCommandBuffers();
     recordCommands();
@@ -134,8 +145,10 @@ void VulkanRenderer::cleanup()
 {
   vkDeviceWaitIdle(mainDevice.logicalDevice);
 
-  firstMesh.destroyVertexBuffer();
-  
+  for(size_t i=0; i<meshList.size(); i++){
+    meshList[i].destroyBuffers();
+  }
+ 
   for(size_t i=0; i<MAX_FRAME_DRAWS; i++){
     vkDestroySemaphore(mainDevice.logicalDevice, renderFinished[i], nullptr);
     vkDestroySemaphore(mainDevice.logicalDevice, imageAvailable[i], nullptr);
@@ -974,12 +987,16 @@ void VulkanRenderer::recordCommands()
 
         //bind and execute pipeline
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-        
-        VkBuffer vertexBuffers[] = {firstMesh.getVertexBuffer()};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+       
+        for(size_t j=0; j<meshList.size(); j++){
+          VkBuffer vertexBuffers[] = {meshList[j].getVertexBuffer()};
+          VkDeviceSize offsets[] = {0};
+          vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+          vkCmdBindIndexBuffer(commandBuffers[i], meshList[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+          vkCmdDrawIndexed(commandBuffers[i], meshList[j].getIndexCount(), 1, 0, 0, 0);
+        }
+  
 
-        vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(firstMesh.getVertexCount()), 1, 0, 0);
 
       //end render pass
       vkCmdEndRenderPass(commandBuffers[i]);

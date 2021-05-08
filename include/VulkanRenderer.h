@@ -24,7 +24,7 @@ private:
   GLFWwindow * window;
   int currentFrame{0};
 
-  Mesh firstMesh;
+  std::vector<Mesh> meshList;
 
   VkInstance instance;
   struct {
