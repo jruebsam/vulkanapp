@@ -1,5 +1,8 @@
 #include "VulkanRenderer.h"
 #include "Validation.h"
+#include "Utilities.h"
+#include "Mesh.h"
+
 #include <cstring>
 #include <algorithm>
 #include <set>
@@ -17,6 +20,18 @@ int VulkanRenderer::init(GLFWwindow * newWindow)
     createSurface();
     getPhysicalDevice();
     createLogicalDevice();
+
+    //create a mesh 
+    std::vector<Vertex> meshVertices = {
+      {{ 0.4, -0.4, 0.0}, {1.0f, 0.0f, 0.0f}},
+      {{ 0.4,  0.4, 0.0}, {0.0f, 1.0f, 0.0f}},
+      {{-0.4,  0.4, 0.0}, {0.0f, 0.0f, 1.0f}},
+      {{ 0.4, -0.4, 0.0}, {1.0f, 0.0f, 0.0f}},
+      {{-0.4,  0.4, 0.0}, {0.0f, 0.0f, 1.0f}},
+      {{-0.4, -0.4, 0.0}, {1.0f, 1.0f, 0.0f}}
+    };
+    firstMesh = Mesh(mainDevice.physicalDevice, mainDevice.logicalDevice, &meshVertices);
+
     createSwapChain();
     createRenderPass();
     createGraphicsPipeline();
@@ -118,6 +133,8 @@ void VulkanRenderer::setupDebugMessenger() {
 void VulkanRenderer::cleanup()
 {
   vkDeviceWaitIdle(mainDevice.logicalDevice);
+
+  firstMesh.destroyVertexBuffer();
   
   for(size_t i=0; i<MAX_FRAME_DRAWS; i++){
     vkDestroySemaphore(mainDevice.logicalDevice, renderFinished[i], nullptr);
@@ -626,16 +643,34 @@ void VulkanRenderer::createGraphicsPipeline()
   fragmentShaderStageCreateInfo.pName = "main";
 
   VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShaderStageCreateInfo, fragmentShaderStageCreateInfo};
-  // CREATE PIPELINE
-  // TODO: VERTEX INPUT
+  
+  // vertex data
+  VkVertexInputBindingDescription bindingDescription{};
+  bindingDescription.binding = 0;
+  bindingDescription.stride = sizeof(Vertex);
+  bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+  //position and color
+  std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions;
+
+  attributeDescriptions[0].binding = 0;
+  attributeDescriptions[0].location = 0;
+  attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+  attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+  attributeDescriptions[1].binding = 0;
+  attributeDescriptions[1].location = 1;
+  attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+  attributeDescriptions[1].offset = offsetof(Vertex, col);
+
   
   //VERTEX INPUT
   VkPipelineVertexInputStateCreateInfo vertexInputCreateInfo{};
   vertexInputCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-  vertexInputCreateInfo.vertexBindingDescriptionCount = 0;
-  vertexInputCreateInfo.pVertexBindingDescriptions = nullptr;
-  vertexInputCreateInfo.vertexAttributeDescriptionCount = 0;
-  vertexInputCreateInfo.pVertexAttributeDescriptions = nullptr;
+  vertexInputCreateInfo.vertexBindingDescriptionCount = 1;
+  vertexInputCreateInfo.pVertexBindingDescriptions = &bindingDescription;
+  vertexInputCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+  vertexInputCreateInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
   //INPUT ASSEMBLY
   VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -919,7 +954,7 @@ void VulkanRenderer::recordCommands()
   renderPassBeginInfo.renderArea.extent = swapChainExtent;
 
   VkClearValue clearValues[] ={
-    {0.1f, 0.2f, 0.7f, 1.0f}
+    {0.1f, 0.2f, 0.3f, 1.0f}
   };
   renderPassBeginInfo.pClearValues = clearValues;
   renderPassBeginInfo.clearValueCount = 1;
@@ -939,7 +974,12 @@ void VulkanRenderer::recordCommands()
 
         //bind and execute pipeline
         vkCmdBindPipeline(commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-        vkCmdDraw(commandBuffers[i], 3, 1, 0, 0);
+        
+        VkBuffer vertexBuffers[] = {firstMesh.getVertexBuffer()};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+        vkCmdDraw(commandBuffers[i], static_cast<uint32_t>(firstMesh.getVertexCount()), 1, 0, 0);
 
       //end render pass
       vkCmdEndRenderPass(commandBuffers[i]);

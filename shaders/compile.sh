@@ -2,7 +2,7 @@
 
 dir=`dirname $0`
 
-/usr/bin/glslc $dir/shader.vert -o vert.spv
-/usr/bin/glslc $dir/shader.frag -o frag.spv
+/usr/bin/glslc $dir/shader.vert -o $dir/vert.spv
+/usr/bin/glslc $dir/shader.frag -o $dir/frag.spv
 
 

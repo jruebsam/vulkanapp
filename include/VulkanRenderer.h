@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "Mesh.h"
 #include "Utilities.h"
 
 class VulkanRenderer
@@ -22,6 +23,8 @@ public:
 private:
   GLFWwindow * window;
   int currentFrame{0};
+
+  Mesh firstMesh;
 
   VkInstance instance;
   struct {

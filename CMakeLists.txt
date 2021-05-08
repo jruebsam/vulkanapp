@@ -21,7 +21,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_executable(${BIN_NAME} ${SOURCES})
 
-
 target_link_libraries(${BIN_NAME} glfw)
 target_link_libraries(${BIN_NAME} vulkan)
 
