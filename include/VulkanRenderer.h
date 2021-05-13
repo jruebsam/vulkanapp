@@ -64,6 +64,7 @@ private:
 
   // descriptors
   VkDescriptorSetLayout descriptorSetLayout;
+  VkPushConstantRange pushConstantRange;
 
   std::vector<VkBuffer> vpUniformBuffer;
   std::vector<VkDeviceMemory> vpUniformBufferMemory;
@@ -73,9 +74,10 @@ private:
 
   std::vector<VkDescriptorSet> descriptorSets;
 
-  VkDeviceSize minUniformBufferOffset;
-  size_t modelUniformAlignment;
-  UboModel* modelTransferSpace;
+
+  //VkDeviceSize minUniformBufferOffset;
+  //size_t modelUniformAlignment;
+  //UboModel* modelTransferSpace;
 
   // pipeline
   VkPipelineLayout pipelineLayout;
@@ -94,6 +96,7 @@ private:
   void createSwapChain();
   void createRenderPass();
   void createDescriptorSetLayout();
+  void createPushConstantRange();
   void createUniformBuffers();
   void createGraphicsPipeline();
   void createFrameBuffers();
@@ -105,7 +108,7 @@ private:
 
   void updateUniformBuffers(uint32_t imageIndex);
   // record functions
-  void recordCommands();
+  void recordCommands(uint32_t imageIndex);
 
   // allocate functions
   void allocateDynamicBufferTransferSpace();
