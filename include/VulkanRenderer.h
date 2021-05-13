@@ -56,7 +56,12 @@ private:
   std::vector<SwapChainImage> swapChainImages;
   std::vector<VkFramebuffer> swapChainFrameBuffers;
   std::vector<VkCommandBuffer> commandBuffers;
-  std::vector<VkFence> drawFences;
+
+  VkImage depthBufferImage;
+  VkDeviceMemory depthBufferImageMemory;
+  VkImageView depthBufferImageView;
+  VkFormat depthFormat;
+
 
   //utility components
   VkFormat swapChainImageFormat;
@@ -99,6 +104,7 @@ private:
   void createPushConstantRange();
   void createUniformBuffers();
   void createGraphicsPipeline();
+  void createDepthBufferImage();
   void createFrameBuffers();
   void createCommandPool();
   void createCommandBuffers();
@@ -116,6 +122,7 @@ private:
   // sync objects
   std::vector<VkSemaphore> imageAvailable;
   std::vector<VkSemaphore> renderFinished;
+  std::vector<VkFence> drawFences;
 
   // get functions
   void getPhysicalDevice();
@@ -130,6 +137,9 @@ private:
   bool checkDeviceExtensionSupport(VkPhysicalDevice device);
   bool checkDeviceSuitable(VkPhysicalDevice device);
 
+  VkImage createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+                      VkImageUsageFlags useFlags, VkMemoryPropertyFlags propFlags, VkDeviceMemory *imageMemory);
+
   VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags);
   VkShaderModule createShaderModule(const std::vector<char> &code);
 
@@ -137,6 +147,7 @@ private:
   VkSurfaceFormatKHR chooseBestSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &formats);
   VkPresentModeKHR chooseBestPresentationModel(const std::vector<VkPresentModeKHR> &presentationModes);
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &surfaceCapabilities);
+  VkFormat chooseSupportedFormat(const std::vector<VkFormat> &formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
 
 };
 
