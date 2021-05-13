@@ -13,6 +13,7 @@ Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue trans
   createVertexBuffer(transferQueue, transferCommandPool, vertices);
   createIndexBuffer(transferQueue, transferCommandPool, indices);
 
+    uboModel.model = glm::mat4(1.0f);
 }
 
 
