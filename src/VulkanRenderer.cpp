@@ -45,38 +45,9 @@ int VulkanRenderer::init(GLFWwindow * newWindow)
 
     uboViewProjection.projection = glm::perspective(glm::radians(45.0f), (float) swapChainExtent.width/(float) swapChainExtent.height, 0.1f, 100.0f);
     uboViewProjection.projection[1][1] *= -1;
-    uboViewProjection.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f),  glm::vec3(0.0f, 1.0f, 0.0f));
+    uboViewProjection.view = glm::lookAt(glm::vec3(0.0f, 17.0f, 18.0f), glm::vec3(0.0f, 0.0f, 0.0f),  glm::vec3(0.0f, 1.0f, 0.0f));
 
-    //create a mesh 
-    std::vector<Vertex> meshVertices = {
-      {{-0.4,  0.4, 0.0}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}}, 
-      {{-0.4, -0.4, 0.0}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}}, 
-      {{ 0.4, -0.4, 0.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}}, 
-      {{ 0.4,  0.4, 0.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f}}  
-    };
-
-    std::vector<Vertex> meshVertices2 = {
-      {{-0.25,  0.6, 0.0}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f}},
-      {{-0.25, -0.6, 0.0}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f}},
-      {{ 0.25, -0.6, 0.0}, {0.0f, 0.0f, 1.0f}, {0.0f, 0.0f}},
-      {{ 0.25,  0.6, 0.0}, {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f}}
-    };
-
-    std::vector<uint32_t>  meshIndices{0, 1, 2, 2, 3, 0};
-
-    Mesh mesh1 = Mesh(
-        mainDevice.physicalDevice, mainDevice.logicalDevice,
-        graphicsQueue, graphicsCommandPool, &meshVertices, &meshIndices,
-        createTexture("giraffe.jpg")
-    );
-
-    Mesh mesh2 = Mesh(
-        mainDevice.physicalDevice, mainDevice.logicalDevice, 
-        graphicsQueue, graphicsCommandPool, &meshVertices2, &meshIndices,
-        createTexture("panda.jpg")
-    );
-    meshList.push_back(mesh1);
-    meshList.push_back(mesh2);
+    createTexture("plain.png");
   }
   catch (const std::runtime_error &e) {
     printf("ERROR: %s\n", e.what());
@@ -86,10 +57,46 @@ int VulkanRenderer::init(GLFWwindow * newWindow)
   return 0;
 }
 
+int VulkanRenderer::createMeshModel(std::string modelFile)
+{
+  Assimp::Importer importer; 
+  const aiScene *scene = importer.ReadFile(modelFile, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
+  if(!scene)
+  {
+    throw std::runtime_error("Failed to load Model! (" + modelFile + ")");
+  }
+
+  std::vector<std::string> textureNames = MeshModel::LoadMaterials(scene);
+
+  std::vector<int> matToTex(textureNames.size());
+
+  for(size_t i=0; i<textureNames.size(); i++)
+  {
+    if(textureNames[i].empty())
+    {
+      matToTex[i] = 0;
+    }
+    else
+    {
+      matToTex[i] = createTexture(textureNames[i]);
+    }
+  }
+
+  std::vector<Mesh> modelMeshes = MeshModel::LoadNode(
+    mainDevice.physicalDevice, mainDevice.logicalDevice, graphicsQueue, graphicsCommandPool, 
+    scene->mRootNode, scene, matToTex
+  );
+
+  MeshModel meshModel = MeshModel(modelMeshes);
+  modelList.push_back(meshModel);
+
+  return modelList.size() - 1;
+}
+
 void VulkanRenderer::updateModel(int modelId, glm::mat4 newModel)
 {
-  if(modelId >= meshList.size()) return;
-  meshList[modelId].setModel(newModel);
+  if(modelId >= modelList.size()) return;
+  modelList[modelId].setModel(newModel);
 }
 
 void VulkanRenderer::draw()
@@ -186,6 +193,11 @@ void VulkanRenderer::cleanup()
 {
   vkDeviceWaitIdle(mainDevice.logicalDevice);
 
+  for(size_t i=0; i<modelList.size(); i++)
+  {
+    modelList[i].destroyMeshModel();
+  }
+
   vkDestroyDescriptorPool(mainDevice.logicalDevice, samplerDescriptorPool, nullptr);
   vkDestroyDescriptorSetLayout(mainDevice.logicalDevice, samplerSetLayout, nullptr);
 
@@ -209,10 +221,6 @@ void VulkanRenderer::cleanup()
   {
     vkDestroyBuffer(mainDevice.logicalDevice, vpUniformBuffer[i], nullptr);
     vkFreeMemory(mainDevice.logicalDevice, vpUniformBufferMemory[i], nullptr);
-  }
-
-  for(size_t i=0; i<meshList.size(); i++){
-    meshList[i].destroyBuffers();
   }
  
   for(size_t i=0; i<MAX_FRAME_DRAWS; i++){
@@ -1317,25 +1325,41 @@ void VulkanRenderer::recordCommands(uint32_t imageIndex)
       //bind and execute pipeline
       vkCmdBindPipeline(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
       
-      for(size_t j=0; j<meshList.size(); j++){
-        VkBuffer vertexBuffers[] = {meshList[j].getVertexBuffer()};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(commandBuffers[imageIndex], meshList[j].getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+      for(size_t j=0; j<modelList.size(); j++){
 
-        vkCmdPushConstants(commandBuffers[imageIndex], pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Model), &meshList[j].getModel());
+        MeshModel thisModel = modelList[j];
 
-        std::array<VkDescriptorSet, 2> descriptorSetGroup =  {descriptorSets[imageIndex], samplerDescriptorSets[meshList[j].getTexId()]};
+        glm::mat4 modelMatrix = thisModel.getModel();
 
-        vkCmdBindDescriptorSets(
-            commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 
-            static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr
+        vkCmdPushConstants(
+            commandBuffers[imageIndex],
+            pipelineLayout,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            0, sizeof(Model), &modelMatrix
         );
 
-        vkCmdDrawIndexed(commandBuffers[imageIndex], meshList[j].getIndexCount(), 1, 0, 0, 0);
+
+        for(size_t k=0; k<thisModel.getMeshCount(); k++)
+        {
+
+          VkBuffer vertexBuffers[] = {thisModel.getMesh(k)->getVertexBuffer()};
+          VkDeviceSize offsets[] = {0};
+          vkCmdBindVertexBuffers(commandBuffers[imageIndex], 0, 1, vertexBuffers, offsets);
+          vkCmdBindIndexBuffer(commandBuffers[imageIndex], thisModel.getMesh(k)->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT32);
+
+
+          std::array<VkDescriptorSet, 2> descriptorSetGroup =  {descriptorSets[imageIndex], samplerDescriptorSets[thisModel.getMesh(k)->getTexId()]};
+
+          vkCmdBindDescriptorSets(
+              commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 
+              static_cast<uint32_t>(descriptorSetGroup.size()), descriptorSetGroup.data(), 0, nullptr
+          );
+
+          vkCmdDrawIndexed(commandBuffers[imageIndex], thisModel.getMesh(k)->getIndexCount(), 1, 0, 0, 0);
+
+        }
+        
       }
-
-
 
     //end render pass
     vkCmdEndRenderPass(commandBuffers[imageIndex]);

@@ -10,8 +10,14 @@ set(shader_destination "${CMAKE_CURRENT_BINARY_DIR}/shaders")
 set(texture_source "${CMAKE_SOURCE_DIR}/textures")
 set(texture_destination "${CMAKE_CURRENT_BINARY_DIR}/textures")
 
+set(models_source "${CMAKE_SOURCE_DIR}/models")
+set(models_destination "${CMAKE_CURRENT_BINARY_DIR}/models")
+
 file(GLOB SOURCES "src/*.cpp")
 include_directories("include")
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+find_package(assimp REQUIRED)
 
 
 find_package(PkgConfig REQUIRED)
@@ -26,6 +32,7 @@ add_executable(${BIN_NAME} ${SOURCES})
 
 target_link_libraries(${BIN_NAME} glfw)
 target_link_libraries(${BIN_NAME} vulkan)
+target_link_libraries(${BIN_NAME} assimp)
 
 
 # Compile shaders
@@ -39,5 +46,10 @@ COMMENT "symbolic link resource folder from ${shader_source} => ${shader_destina
 
 add_custom_command(TARGET ${BIN_NAME}
 COMMAND ${CMAKE_COMMAND} -E create_symlink ${texture_source} ${texture_destination}
-DEPENDS ${shader_destination}
+DEPENDS ${texture_destination}
 COMMENT "symbolic link resource folder from ${texture_source} => ${texture_destination}")
+
+add_custom_command(TARGET ${BIN_NAME}
+COMMAND ${CMAKE_COMMAND} -E create_symlink ${models_source} ${models_destination}
+DEPENDS ${models_destination}
+COMMENT "symbolic link resource folder from ${models_source} => ${models_destination}")
