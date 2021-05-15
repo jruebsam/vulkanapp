@@ -30,7 +30,7 @@ void initWindow(std::string wName = "Test Window", const int width = 800, const 
 int main()
 {
   // Create Window
-  initWindow("Test Window", 800, 600);
+  initWindow("Test Window", 1680, 1050);
 
   // Create Vulkan Renderer instance
   if (vulkanRenderer.init(window) == EXIT_FAILURE)
