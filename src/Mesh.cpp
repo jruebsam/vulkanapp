@@ -3,7 +3,7 @@
 #include <cstring>
 
 Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue,
-           VkCommandPool transferCommandPool, std::vector<Vertex>* vertices, std::vector<uint32_t> *indices)
+           VkCommandPool transferCommandPool, std::vector<Vertex>* vertices, std::vector<uint32_t> *indices, int newTexid)
 
 {
   vertexCount = vertices->size();
@@ -13,7 +13,8 @@ Mesh::Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue trans
   createVertexBuffer(transferQueue, transferCommandPool, vertices);
   createIndexBuffer(transferQueue, transferCommandPool, indices);
 
-    model.model = glm::mat4(1.0f);
+  model.model = glm::mat4(1.0f);
+  texId = newTexid;
 }
 
 

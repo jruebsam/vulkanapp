@@ -8,9 +8,12 @@
 
 #include "Mesh.h"
 #include "Utilities.h"
+#include "stb_image.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+
 
 
 class VulkanRenderer
@@ -69,6 +72,8 @@ private:
 
   // descriptors
   VkDescriptorSetLayout descriptorSetLayout;
+  VkDescriptorSetLayout samplerSetLayout;
+
   VkPushConstantRange pushConstantRange;
 
   std::vector<VkBuffer> vpUniformBuffer;
@@ -78,11 +83,13 @@ private:
   std::vector<VkDeviceMemory> modelDUniformBufferMemory;
 
   std::vector<VkDescriptorSet> descriptorSets;
+  std::vector<VkDescriptorSet> samplerDescriptorSets;
 
-
-  //VkDeviceSize minUniformBufferOffset;
-  //size_t modelUniformAlignment;
-  //UboModel* modelTransferSpace;
+  // assets 
+  VkSampler textureSampler;
+  std::vector<VkImage> textureImages;
+  std::vector<VkDeviceMemory> textureImageMemory;
+  std::vector<VkImageView> textureImageViews;
 
   // pipeline
   VkPipelineLayout pipelineLayout;
@@ -92,6 +99,7 @@ private:
   // pools
   VkCommandPool graphicsCommandPool;
   VkDescriptorPool descriptorPool;
+  VkDescriptorPool samplerDescriptorPool;
 
   // create functions
   void createInstance();
@@ -112,12 +120,14 @@ private:
   void createDescriptorPool();
   void createDescriptorSets();
 
+  int createTextureImage(std::string fileName);
+  int createTexture(std::string fileName);
+  void createTextureSampler();
+  int createTextureDescriptor(VkImageView textureImage);
+
   void updateUniformBuffers(uint32_t imageIndex);
   // record functions
   void recordCommands(uint32_t imageIndex);
-
-  // allocate functions
-  void allocateDynamicBufferTransferSpace();
 
   // sync objects
   std::vector<VkSemaphore> imageAvailable;
@@ -148,6 +158,9 @@ private:
   VkPresentModeKHR chooseBestPresentationModel(const std::vector<VkPresentModeKHR> &presentationModes);
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &surfaceCapabilities);
   VkFormat chooseSupportedFormat(const std::vector<VkFormat> &formats, VkImageTiling tiling, VkFormatFeatureFlags featureFlags);
+
+  // loader functions
+  stbi_uc* loadTextureFile(std::string fileName, int *width, int *height, VkDeviceSize *imageSize);
 
 };
 

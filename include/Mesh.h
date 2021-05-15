@@ -17,10 +17,11 @@ class Mesh
 public:
   Mesh() = default;
   Mesh(VkPhysicalDevice newPhysicalDevice, VkDevice newDevice, VkQueue transferQueue, VkCommandPool transferCommandPool, 
-       std::vector<Vertex> *vertices, std::vector<uint32_t> *indices);
+       std::vector<Vertex> *vertices, std::vector<uint32_t> *indices, int newTexId);
 
   int getVertexCount(){return vertexCount;}
   int getIndexCount(){return indexCount;}
+  int getTexId(){return texId;}
 
   VkBuffer getVertexBuffer(){return vertexBuffer;}
   VkBuffer getIndexBuffer(){return indexBuffer;}
@@ -35,6 +36,8 @@ public:
 
 private:
   Model model;
+  int texId;
+
   int vertexCount;
   VkBuffer vertexBuffer;
   VkDeviceMemory vertexBufferMemory;

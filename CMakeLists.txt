@@ -4,8 +4,11 @@ project(VulkanDemo)
 set(BIN_NAME "vkdemo")
 set(NDEBUG)
 
-set(source "${CMAKE_SOURCE_DIR}/shaders")
-set(destination "${CMAKE_CURRENT_BINARY_DIR}/shaders")
+set(shader_source "${CMAKE_SOURCE_DIR}/shaders")
+set(shader_destination "${CMAKE_CURRENT_BINARY_DIR}/shaders")
+
+set(texture_source "${CMAKE_SOURCE_DIR}/textures")
+set(texture_destination "${CMAKE_CURRENT_BINARY_DIR}/textures")
 
 file(GLOB SOURCES "src/*.cpp")
 include_directories("include")
@@ -30,6 +33,11 @@ add_custom_command(TARGET ${BIN_NAME} PRE_BUILD
 COMMAND /bin/sh ${CMAKE_SOURCE_DIR}/shaders/compile.sh)
 
 add_custom_command(TARGET ${BIN_NAME}
-COMMAND ${CMAKE_COMMAND} -E create_symlink ${source} ${destination}
-DEPENDS ${destination}
-COMMENT "symbolic link resource folder from ${source} => ${destination}")
+COMMAND ${CMAKE_COMMAND} -E create_symlink ${shader_source} ${shader_destination}
+DEPENDS ${shader_destination}
+COMMENT "symbolic link resource folder from ${shader_source} => ${shader_destination}")
+
+add_custom_command(TARGET ${BIN_NAME}
+COMMAND ${CMAKE_COMMAND} -E create_symlink ${texture_source} ${texture_destination}
+DEPENDS ${shader_destination}
+COMMENT "symbolic link resource folder from ${texture_source} => ${texture_destination}")
